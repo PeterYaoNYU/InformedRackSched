@@ -1,0 +1,2 @@
+1. The NIC can compute average queuning delay and provide load profiling information to the Rack?
+2. 
