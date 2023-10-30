@@ -257,7 +257,7 @@ host_destroy_core_objects(struct program_core_objects *state)
 	if (res != DOCA_SUCCESS)
 		DOCA_LOG_ERR("Failed to close device: %s", doca_get_error_string(res));
 	state->dev = NULL;
-}
+}  
 
 doca_error_t
 dma_jobs_is_supported(struct doca_devinfo *devinfo)

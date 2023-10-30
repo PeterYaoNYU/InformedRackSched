@@ -6,7 +6,7 @@ project('InformedRackSched', 'C', 'CPP',
 	meson_version: '>= 0.61.2'
 )
 
-NAME = 'dma_host'
+NAME = 'dma_copy_dpu'
 
 add_project_arguments('-D DOCA_ALLOW_EXPERIMENTAL_API', language: ['c', 'cpp'])
 

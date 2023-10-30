@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "dma_common.h": "c",
+        "common.h": "c",
+        "doca_log.h": "c",
+        "doca_dev.h": "c",
+        "time.h": "c",
+        "doca_buf.h": "c",
+        "doca_error.h": "c"
+    }
+}
