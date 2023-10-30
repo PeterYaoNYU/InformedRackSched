@@ -264,8 +264,8 @@ dma_copy_dpu(char *export_desc_file_path, char *buffer_info_file_path, struct do
 	}
 
 	DOCA_LOG_INFO("Remote DMA copy was done Successfully");
-	dpu_buffer[dpu_buffer_size - 1] = '\0';
-	DOCA_LOG_INFO("Memory content: %s", dpu_buffer);
+	// dpu_buffer[dpu_buffer_size - 1] = '\0';
+	// DOCA_LOG_INFO("Memory content: %s", dpu_buffer);
 
 	if (doca_buf_refcount_rm(dpu_doca_buf, NULL) != DOCA_SUCCESS)
 		DOCA_LOG_ERR("Failed to remove DOCA dpu buffer reference count");

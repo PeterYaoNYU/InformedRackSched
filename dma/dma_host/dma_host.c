@@ -113,27 +113,28 @@ dma_copy_host(struct doca_pci_bdf *pcie_addr, char *src_buffer, size_t src_buffe
 		return result;
 	}
 
-	/* Allow exporting the mmap to DPU for read only operations */
-	result = doca_mmap_set_permissions(state.src_mmap, DOCA_ACCESS_DPU_READ_WRITE);
+	/* Allow exporting the mmap to DPU for read and write operations */
+	/* In the future, I will extend the communication to be bi-directional*/
+	result = doca_mmap_set_permissions(state.host_mmap, DOCA_ACCESS_DPU_READ_WRITE);
 	if (result != DOCA_SUCCESS) {
 		host_destroy_core_objects(&state);
 		return result;
 	}
 
 	/* Populate the memory map with the allocated memory */
-	result = doca_mmap_set_memrange(state.src_mmap, src_buffer, src_buffer_size);
+	result = doca_mmap_set_memrange(state.host_mmap, src_buffer, src_buffer_size);
 	if (result != DOCA_SUCCESS) {
 		host_destroy_core_objects(&state);
 		return result;
 	}
-	result = doca_mmap_start(state.src_mmap);
+	result = doca_mmap_start(state.host_mmap);
 	if (result != DOCA_SUCCESS) {
 		host_destroy_core_objects(&state);
 		return result;
 	}
 
 	/* Export DOCA mmap to enable DMA on Host*/
-	result = doca_mmap_export_dpu(state.src_mmap, state.dev, &export_desc, &export_desc_len);
+	result = doca_mmap_export_dpu(state.host_mmap, state.dev, &export_desc, &export_desc_len);
 	if (result != DOCA_SUCCESS) {
 		host_destroy_core_objects(&state);
 		return result;
@@ -152,6 +153,11 @@ dma_copy_host(struct doca_pci_bdf *pcie_addr, char *src_buffer, size_t src_buffe
 	/* Wait until DMA copy on the DPU is over */
 	while (!is_dma_done_on_dpu)
 		sleep(1);
+
+	DOCA_LOG_INFO("Remote DMA copy was done Successfully");
+	src_buffer[src_buffer_size - 1] = '\0';
+	DOCA_LOG_INFO("Memory content: %s", src_buffer);
+	
 
 	/* Destroy all relevant DOCA core objects */
 	host_destroy_core_objects(&state);

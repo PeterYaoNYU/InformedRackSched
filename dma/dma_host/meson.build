@@ -19,9 +19,9 @@ app_srcs=[
 	# Main function for the sample's executable
 	NAME + '_main.c',
 	# Common code for the DOCA DMA
-	'/home/peter/InformedRackSched/dma/dma_common.c',
+	'../dma_common.c',
 	# Common code for all DOCA Code
-	'/home/peter/InformedRackSched/common.c',
+	'../../common.c',
 	# Common code for all DOCA applications
 	'/opt/mellanox/doca/applications/common/src/utils.c',
 	'/opt/mellanox/doca/applications/common/src/doca_utils.c',
