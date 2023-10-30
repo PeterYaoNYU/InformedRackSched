@@ -27,7 +27,7 @@ struct dma_config {
 
 
 struct dma_copy_cfg {
-	enum dma_copy_mode mode;				/* Node running mode {host, dpu} */
+	// enum dma_copy_mode mode;				/* Node running mode {host, dpu} */
 	bool send_to_host;						/* Indicate DMA copy direction */
 	uint32_t packet_size;					/* The length of packets in bytes */
 };

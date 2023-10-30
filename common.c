@@ -288,29 +288,29 @@ create_core_objects(struct program_core_objects *state, uint32_t max_bufs)
 {
 	doca_error_t res;
 
-	res = doca_mmap_create(NULL, &state->src_mmap);
+	res = doca_mmap_create(NULL, &state->host_mmap);
 	if (res != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create source mmap: %s", doca_get_error_string(res));
 		return res;
 	}
-	res = doca_mmap_dev_add(state->src_mmap, state->dev);
+	res = doca_mmap_dev_add(state->host_mmap, state->dev);
 	if (res != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to add device to source mmap: %s", doca_get_error_string(res));
-		doca_mmap_destroy(state->src_mmap);
-		state->src_mmap = NULL;
+		doca_mmap_destroy(state->host_mmap);
+		state->host_mmap = NULL;
 		return res;
 	}
 
-	res = doca_mmap_create(NULL, &state->dst_mmap);
+	res = doca_mmap_create(NULL, &state->dpu_mmap);
 	if (res != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create destination mmap: %s", doca_get_error_string(res));
 		return res;
 	}
-	res = doca_mmap_dev_add(state->dst_mmap, state->dev);
+	res = doca_mmap_dev_add(state->dpu_mmap, state->dev);
 	if (res != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to add device to destination mmap: %s", doca_get_error_string(res));
-		doca_mmap_destroy(state->dst_mmap);
-		state->dst_mmap = NULL;
+		doca_mmap_destroy(state->dpu_mmap);
+		state->dpu_mmap = NULL;
 		return res;
 	}
 
@@ -396,22 +396,22 @@ destroy_core_objects(struct program_core_objects *state)
 		state->buf_inv = NULL;
 	}
 
-	if (state->src_mmap != NULL) {
-		tmp_result = doca_mmap_destroy(state->src_mmap);
+	if (state->host_mmap != NULL) {
+		tmp_result = doca_mmap_destroy(state->host_mmap);
 		if (tmp_result != DOCA_SUCCESS) {
 			DOCA_ERROR_PROPAGATE(result, tmp_result);
 			DOCA_LOG_ERR("Failed to destroy source mmap: %s", doca_get_error_string(tmp_result));
 		}
-		state->src_mmap = NULL;
+		state->host_mmap = NULL;
 	}
 
-	if (state->dst_mmap != NULL) {
-		tmp_result = doca_mmap_destroy(state->dst_mmap);
+	if (state->dpu_mmap != NULL) {
+		tmp_result = doca_mmap_destroy(state->dpu_mmap);
 		if (tmp_result != DOCA_SUCCESS) {
 			DOCA_ERROR_PROPAGATE(result, tmp_result);
 			DOCA_LOG_ERR("Failed to destroy destination mmap: %s", doca_get_error_string(tmp_result));
 		}
-		state->dst_mmap = NULL;
+		state->dpu_mmap = NULL;
 	}
 
 	if (state->ctx != NULL) {

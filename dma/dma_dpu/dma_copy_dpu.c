@@ -119,8 +119,11 @@ dma_copy_dpu(char *export_desc_file_path, char *buffer_info_file_path, struct do
 	struct doca_event event = {0};
 	struct doca_dma_job_memcpy dma_job;
 	struct doca_dma *dma_ctx;
+    // the doca buf on the host side
 	struct doca_buf *host_doca_buf;
+    // the doca buf on the dpu side
 	struct doca_buf *dpu_doca_buf;
+    /*remote mmap, will create DPU mmap later*/
 	struct doca_mmap *remote_mmap;
 	doca_error_t result;
 	struct timespec ts = {0};
@@ -128,7 +131,7 @@ dma_copy_dpu(char *export_desc_file_path, char *buffer_info_file_path, struct do
 	char export_desc[1024] = {0};
 	char *remote_addr = NULL;
 	char *dpu_buffer;
-	size_t dst_buffer_size, remote_addr_len = 0, export_desc_len = 0;
+	size_t dpu_buffer_size, remote_addr_len = 0, export_desc_len = 0;
 
 	result = doca_dma_create(&dma_ctx);
 	if (result != DOCA_SUCCESS) {
@@ -155,8 +158,8 @@ dma_copy_dpu(char *export_desc_file_path, char *buffer_info_file_path, struct do
 				    &remote_addr, &remote_addr_len);
 
 	/* Copy the entire host buffer */
-	dst_buffer_size = remote_addr_len;
-	dpu_buffer = (char *)malloc(dst_buffer_size);
+	dpu_buffer_size = remote_addr_len;
+	dpu_buffer = (char *)malloc(dpu_buffer_size);
 	if (dpu_buffer == NULL) {
 		DOCA_LOG_ERR("Failed to allocate buffer memory");
 		dma_cleanup(&state, dma_ctx);
@@ -165,9 +168,9 @@ dma_copy_dpu(char *export_desc_file_path, char *buffer_info_file_path, struct do
 
     // test:
     // populate the DPU buffer with things I want to write to the host
-    memcpy(dpu_buffer, "Hello from DPU", remote_addr_len);
+    strcpy(dpu_buffer, "Hello from DPU");
 
-	result = doca_mmap_set_memrange(state.dpu_mmap, dpu_buffer, dst_buffer_size);
+	result = doca_mmap_set_memrange(state.dpu_mmap, dpu_buffer, dpu_buffer_size);
 	if (result != DOCA_SUCCESS) {
 		free(dpu_buffer);
 		dma_cleanup(&state, dma_ctx);
@@ -202,12 +205,12 @@ dma_copy_dpu(char *export_desc_file_path, char *buffer_info_file_path, struct do
 	}
 
 	/* Construct DOCA buffer for each address range */
-	result = doca_buf_inventory_buf_by_addr(state.buf_inv, state.dpu_mmap, dpu_buffer, dst_buffer_size,
+	result = doca_buf_inventory_buf_by_addr(state.buf_inv, state.dpu_mmap, dpu_buffer, dpu_buffer_size,
 						&dpu_doca_buf);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to acquire DOCA buffer representing destination buffer: %s",
 			     doca_get_error_string(result));
-		doca_buf_refcount_rm(src_doca_buf, NULL);
+		doca_buf_refcount_rm(host_doca_buf, NULL);
 		doca_mmap_destroy(remote_mmap);
 		free(dpu_buffer);
 		dma_cleanup(&state, dma_ctx);
@@ -222,7 +225,7 @@ dma_copy_dpu(char *export_desc_file_path, char *buffer_info_file_path, struct do
 	dma_job.src_buff = dpu_doca_buf;
 
 	/* Set data position in src_buff */
-	result = doca_buf_set_data(src_doca_buf, remote_addr, dst_buffer_size);
+	result = doca_buf_set_data(host_doca_buf, remote_addr, dpu_buffer_size);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to set data for DOCA buffer: %s", doca_get_error_string(result));
 		return result;
@@ -233,8 +236,8 @@ dma_copy_dpu(char *export_desc_file_path, char *buffer_info_file_path, struct do
 	result = doca_workq_submit(state.workq, &dma_job.base);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to submit DMA job: %s", doca_get_error_string(result));
-		doca_buf_refcount_rm(dst_doca_buf, NULL);
-		doca_buf_refcount_rm(src_doca_buf, NULL);
+		doca_buf_refcount_rm(dpu_doca_buf, NULL);
+		doca_buf_refcount_rm(host_doca_buf, NULL);
 		doca_mmap_destroy(remote_mmap);
 		free(dpu_buffer);
 		dma_cleanup(&state, dma_ctx);
@@ -261,14 +264,14 @@ dma_copy_dpu(char *export_desc_file_path, char *buffer_info_file_path, struct do
 	}
 
 	DOCA_LOG_INFO("Remote DMA copy was done Successfully");
-	dpu_buffer[dst_buffer_size - 1] = '\0';
+	dpu_buffer[dpu_buffer_size - 1] = '\0';
 	DOCA_LOG_INFO("Memory content: %s", dpu_buffer);
 
-	if (doca_buf_refcount_rm(src_doca_buf, NULL) != DOCA_SUCCESS)
-		DOCA_LOG_ERR("Failed to remove DOCA source buffer reference count");
+	if (doca_buf_refcount_rm(dpu_doca_buf, NULL) != DOCA_SUCCESS)
+		DOCA_LOG_ERR("Failed to remove DOCA dpu buffer reference count");
 
-	if (doca_buf_refcount_rm(dst_doca_buf, NULL) != DOCA_SUCCESS)
-		DOCA_LOG_ERR("Failed to remove DOCA destination buffer reference count");
+	if (doca_buf_refcount_rm(host_doca_buf, NULL) != DOCA_SUCCESS)
+		DOCA_LOG_ERR("Failed to remove DOCA host buffer reference count");
 
 	/* Destroy remote memory map */
 	if (doca_mmap_destroy(remote_mmap) != DOCA_SUCCESS)

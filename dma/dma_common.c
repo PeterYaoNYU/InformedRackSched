@@ -216,13 +216,13 @@ host_init_core_objects(struct program_core_objects *state)
 {
 	doca_error_t res;
 
-	res = doca_mmap_create(NULL, &state->src_mmap);
+	res = doca_mmap_create(NULL, &state->host_mmap);
 	if (res != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create mmap: %s", doca_get_error_string(res));
 		return res;
 	}
 
-	res = doca_mmap_dev_add(state->src_mmap, state->dev);
+	res = doca_mmap_dev_add(state->host_mmap, state->dev);
 	if (res != DOCA_SUCCESS)
 		DOCA_LOG_ERR("Unable to add device to mmap: %s", doca_get_error_string(res));
 
@@ -248,10 +248,10 @@ host_destroy_core_objects(struct program_core_objects *state)
 {
 	doca_error_t res;
 
-	res = doca_mmap_destroy(state->src_mmap);
+	res = doca_mmap_destroy(state->host_mmap);
 	if (res != DOCA_SUCCESS)
 		DOCA_LOG_ERR("Failed to destroy mmap: %s", doca_get_error_string(res));
-	state->src_mmap = NULL;
+	state->host_mmap = NULL;
 
 	res = doca_dev_close(state->dev);
 	if (res != DOCA_SUCCESS)
