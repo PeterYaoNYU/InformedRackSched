@@ -138,17 +138,23 @@ dma_copy_dpu(char *export_desc_file_path, char *buffer_info_file_path, struct do
 		DOCA_LOG_ERR("Unable to create DMA engine: %s", doca_get_error_string(result));
 		return result;
 	}
+    DOCA_LOG_INFO("Context created successfully");
 
 	state.ctx = doca_dma_as_ctx(dma_ctx);
+    if (state.ctx == NULL){
+		DOCA_LOG_ERR("Unable to create DMA context: %s", doca_get_error_string(result));
+    }
 
 	result = open_doca_device_with_pci(pcie_addr, &dma_jobs_is_supported, &state.dev);
 	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to open_doca_device_with_pci: %s", doca_get_error_string(result));
 		doca_dma_destroy(dma_ctx);
 		return result;
 	}
 
 	result = init_core_objects(&state, WORKQ_DEPTH, max_bufs);
 	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to init core objects: %s", doca_get_error_string(result));
 		dma_cleanup(&state, dma_ctx);
 		return result;
 	}
@@ -166,18 +172,24 @@ dma_copy_dpu(char *export_desc_file_path, char *buffer_info_file_path, struct do
 		return DOCA_ERROR_NO_MEMORY;
 	}
 
+    DOCA_LOG_INFO("Remote buffer length is: %d", remote_addr_len);
+
     // test:
     // populate the DPU buffer with things I want to write to the host
     strcpy(dpu_buffer, "Hello from DPU");
+    DOCA_LOG_INFO("The test message is: %s", dpu_buffer);
+
 
 	result = doca_mmap_set_memrange(state.dpu_mmap, dpu_buffer, dpu_buffer_size);
 	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to set memrange for DPU buffer");
 		free(dpu_buffer);
 		dma_cleanup(&state, dma_ctx);
 		return result;
 	}
 	result = doca_mmap_start(state.dpu_mmap);
 	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to start DPU mmap");
 		free(dpu_buffer);
 		dma_cleanup(&state, dma_ctx);
 		return result;
@@ -187,6 +199,7 @@ dma_copy_dpu(char *export_desc_file_path, char *buffer_info_file_path, struct do
 	result = doca_mmap_create_from_export(NULL, (const void *)export_desc, export_desc_len, state.dev,
 					   &remote_mmap);
 	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to create mmap from remote");
 		free(dpu_buffer);
 		dma_cleanup(&state, dma_ctx);
 		return result;
@@ -224,13 +237,31 @@ dma_copy_dpu(char *export_desc_file_path, char *buffer_info_file_path, struct do
 	dma_job.dst_buff = host_doca_buf;
 	dma_job.src_buff = dpu_doca_buf;
 
-	/* Set data position in src_buff */
-	result = doca_buf_set_data(host_doca_buf, remote_addr, dpu_buffer_size);
+
+    // /* Set data position in src_buf */
+	// result = doca_buf_get_data(dpu_doca_buf, &data);
+	// if (result != DOCA_SUCCESS) {
+	// 	DOCA_LOG_ERR("Failed to get data address from DOCA buffer: %s", doca_get_error_string(result));
+	// 	return result;
+	// }
+
+    // set the doca_buf position at the DPU side
+	result = doca_buf_set_data(dpu_doca_buf, dpu_buffer, dpu_buffer_size);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to set data for DOCA buffer: %s", doca_get_error_string(result));
 		return result;
 	}
 
+	/* Set data position in host_buff */
+	result = doca_buf_set_data(host_doca_buf, remote_addr, remote_addr_len);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to set data for DOCA buffer: %s", doca_get_error_string(result));
+		return result;
+	}
+
+    DOCA_LOG_INFO("The data in the DPU buffer is: %s", dpu_buffer);
+
+    DOCA_LOG_INFO("Begin pushing the job to the queue");
 
 	/* Enqueue DMA job */
 	result = doca_workq_submit(state.workq, &dma_job.base);
@@ -243,6 +274,9 @@ dma_copy_dpu(char *export_desc_file_path, char *buffer_info_file_path, struct do
 		dma_cleanup(&state, dma_ctx);
 		return result;
 	}
+
+    DOCA_LOG_INFO("Job submitted to the queue");
+    
 
 	/* Wait for job completion */
 	while ((result = doca_workq_progress_retrieve(state.workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE)) ==
