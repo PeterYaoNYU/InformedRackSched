@@ -5,7 +5,7 @@
 APP = run
 
 # all source are stored in SRCS-y
-SRCS-y := main.c port_init.c send_pkt.c recv_pkt.c
+SRCS-y := main.c port_init.c send_pkt.c recv_pkt.c dma_tx.c
 
 # Build using pkg-config variables if possible
 ifneq ($(shell pkg-config --exists libdpdk && echo 0),0)

@@ -8,6 +8,7 @@
 #include "port_init.h"
 #include "send_pkt.h"
 #include "recv_pkt.h"
+#include "dma_tx.h"
 
 int main(int argc, char *argv[])
 {
@@ -83,6 +84,12 @@ int main(int argc, char *argv[])
         rte_eal_remote_launch((lcore_function_t *)lcore_send_pkt, lp_tx[i], lcore_id++);
     }
 
+    /* Start DMA core */
+    struct dma_tx_param * dma_tx_p = rte_malloc(NULL, sizeof(*dma_tx_p), 0);
+    if (!dma_tx_p)
+        rte_panic("malloc failure\n");
+    dma_tx_p->shared_ring = shared_ring;
+    rte_eal_remote_launch((lcore_function_t *)lcore_dma_tx, dma_tx_p, lcore_id++);
 
     rte_eal_wait_lcore(lcore_id - 1);
     return 0;

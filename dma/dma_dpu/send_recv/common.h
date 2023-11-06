@@ -30,12 +30,17 @@
 
 #define BURST_SIZE 64
 #define BURST_SIZE_TX 32
+#define MAX_PACKETS_DMA_BURST 32
 
 struct lcore_params {
     uint16_t rx_queue_id;
     uint16_t tx_queue_id;
     struct rte_mempool *mem_pool;
     struct rte_ring *shared_ring;
+};
+
+struct dma_tx_param {
+    struct rte_ring * shared_ring;
 };
 
 #define RING_SIZE 1024
