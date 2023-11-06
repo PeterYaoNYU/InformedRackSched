@@ -15,16 +15,22 @@ int lcore_recv_pkt(struct lcore_params *p)
 			continue;
 		}
 
-		rte_log(RTE_LOG_INFO, RTE_LOGTYPE_USER1, "Received %u packets\n", nb_rx);
-
+		rte_log(RTE_LOG_DEBUG, RTE_LOGTYPE_USER1, "Received %u packets\n", nb_rx);
 
 		uint16_t i;
 		for (i = 0; i < nb_rx; i++){
-			int ret = rte_ring_enqueue(p->shared_ring, (void *)bufs[i]);
+			rte_log(RTE_LOG_DEBUG, RTE_LOGTYPE_USER1, "Enqueuing %d th packet into the ring\n", nb_rx);
+			int ret = rte_ring_enqueue(p->shared_ring, bufs[i]);
+			if (ret != 0){
+				rte_log(RTE_LOG_ERR, RTE_LOGTYPE_USER1, "Failed to enqueue packet on ring: %s\n", rte_strerror(ret));
+				rte_pktmbuf_free(bufs[i]);
+			}
+			rte_log(RTE_LOG_DEBUG, RTE_LOGTYPE_USER1, "Finish enqueuing %d th packet into the ring\n", nb_rx);
+
             if (unlikely(ret == -ENOBUFS)) {
                 // The ring is full, you need to decide what to do in this case.
                 // For example, you could drop the packet or implement some back-pressure mechanism.
-                printf("Failed to enqueue packet on ring: Ring is full\n");
+                rte_log(RTE_LOG_ERR, RTE_LOGTYPE_USER1, "Failed to enqueue packet on ring: %s\n", rte_strerror(ret));
                 rte_pktmbuf_free(bufs[i]);
             }
 			rte_pktmbuf_free(bufs[i]);

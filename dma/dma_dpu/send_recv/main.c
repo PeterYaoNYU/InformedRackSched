@@ -11,6 +11,7 @@
 
 int main(int argc, char *argv[])
 {
+    rte_log_set_global_level(RTE_LOG_INFO);
     struct rte_mempool *mbuf_pool;
     struct rte_ring *tx_ring[NUM_TX_QUEUE];
     struct rte_ring *rx_ring[NUM_RX_QUEUE];
@@ -64,7 +65,10 @@ int main(int argc, char *argv[])
         lp_rx[i] = rte_malloc(NULL, sizeof(*lp_rx[i]), 0);
         if (!lp_rx[i])
             rte_panic("malloc failure\n");
-        *lp_rx[i] = (struct lcore_params){i, i, mbuf_pool};
+        lp_rx[i]->shared_ring = shared_ring;
+        lp_rx[i]->rx_queue_id = i;
+        lp_rx[i]->tx_queue_id = i;
+        lp_rx[i]->mem_pool = mbuf_pool;
         rte_eal_remote_launch((lcore_function_t *)lcore_recv_pkt, lp_rx[i], lcore_id++);
     }
 

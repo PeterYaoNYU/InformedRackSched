@@ -13,6 +13,7 @@
         "port_init.h": "c",
         "string.h": "c",
         "cn9k_regexdev.h": "c",
-        "cn9k_regexdev_compiler.h": "c"
+        "cn9k_regexdev_compiler.h": "c",
+        "dma_tx.h": "c"
     }
 }
