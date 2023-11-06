@@ -35,6 +35,7 @@ struct lcore_params {
     uint16_t rx_queue_id;
     uint16_t tx_queue_id;
     struct rte_mempool *mem_pool;
+    struct rte_ring *shared_ring;
 };
 
 #define RING_SIZE 1024
