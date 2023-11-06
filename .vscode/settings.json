@@ -6,6 +6,13 @@
         "doca_dev.h": "c",
         "time.h": "c",
         "doca_buf.h": "c",
-        "doca_error.h": "c"
+        "doca_error.h": "c",
+        "send_pkt.h": "c",
+        "pthread.h": "c",
+        "recv_pkt.h": "c",
+        "port_init.h": "c",
+        "string.h": "c",
+        "cn9k_regexdev.h": "c",
+        "cn9k_regexdev_compiler.h": "c"
     }
 }

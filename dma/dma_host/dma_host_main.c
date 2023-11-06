@@ -65,9 +65,11 @@ main(int argc, char **argv)
 	return EXIT_FAILURE;
 #endif
 	// length = strlen(dma_conf.cpy_txt) + 1;
-	// set the packet length to 1500. 
+	// set the packet length to 1500 bytes. 
 	length = 1500;
-
+	max_num_packets_per_core = 1000;
+	
+	
 	src_buffer = (char *)malloc(length);
 	if (src_buffer == NULL) {
 		DOCA_LOG_ERR("Source buffer allocation failed");
@@ -75,7 +77,6 @@ main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	memcpy(src_buffer, dma_conf.cpy_txt, length);
 
 	result = doca_pci_bdf_from_string(dma_conf.pci_address, &pcie_dev);
 	if (result != DOCA_SUCCESS) {
